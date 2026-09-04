@@ -1,0 +1,32 @@
+{
+  "courses": {
+    "sample-course": {
+      "name": "Sample Course",
+      "current_index": 0,
+      "lessons": [
+        {
+          "lesson_number": 1,
+          "topic": "Welcome to Lesson Display",
+          "learning_intention": "I can find the Admin page and edit this lesson.",
+          "success_criteria": [
+            "I can open the Admin page from another computer on this network.",
+            "I can edit this lesson's Learning Intention and Success Criteria.",
+            "I can add my own courses and a bell schedule."
+          ]
+        }
+      ]
+    }
+  },
+  "schedules": {
+    "regular": []
+  },
+  "active_schedule": "regular",
+  "schedule_labels": {
+    "regular": "Regular Schedule"
+  },
+  "display_styles": {
+    "li": { "font_family": "", "font_size": 96, "bg_start": "#4338CA", "bg_end": "#7C3AED", "accent": "#FDE047" },
+    "sc": { "font_family": "", "font_size": 46, "bg_start": "#047857", "bg_end": "#10B981", "accent": "#FCD34D" }
+  },
+  "restart_signal": 0
+}

@@ -1,0 +1,229 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Lesson Display — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="admin">
+  <div class="admin-header">
+    <h1>Lesson Display — Admin</h1>
+    <p>Edit Learning Intentions, Success Criteria, and the bell schedule. Changes save immediately and the classroom displays pick them up within ~20 seconds — no restart needed.</p>
+  </div>
+
+  <div class="admin-wrap">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="lessons">Lessons</button>
+      <button class="tab-btn" data-tab="schedule">Bell Schedule</button>
+      <button class="tab-btn" data-tab="course">Add a Course</button>
+      <button class="tab-btn" data-tab="style">Display Style</button>
+      <button class="tab-btn" data-tab="links" type="button" id="linksTabBtn">Display Links</button>
+    </div>
+
+    <!-- LESSONS TAB -->
+    <div class="tab-panel" id="tab-lessons">
+      <div class="card">
+        <h2>Lessons</h2>
+        <label for="courseSelect">Course</label>
+        <select id="courseSelect"></select>
+
+        <h3 style="margin-top:20px;">Lessons in this course</h3>
+        <div id="lessonList"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="addLessonBtn" type="button">+ Add New Lesson</button>
+        </div>
+      </div>
+
+      <div class="card" id="editCard" style="display:none;">
+        <h2 id="editTitle">Edit Lesson</h2>
+        <label for="topicInput">Topic (shown in the header, e.g. "System Updates &amp; Drivers")</label>
+        <input type="text" id="topicInput">
+
+        <label for="liInput">Learning Intention</label>
+        <textarea id="liInput" placeholder="I can..."></textarea>
+
+        <label for="scInput">Success Criteria (one per line — each line becomes a bullet)</label>
+        <textarea id="scInput" placeholder="I can describe...&#10;I can explain...&#10;I can identify..." style="min-height:140px;"></textarea>
+
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
+          <input type="checkbox" id="makeCurrentInput" style="width:auto;">
+          Show this lesson on the displays right now (during this course's periods)
+        </label>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="saveLessonBtn" type="button">Save Lesson</button>
+          <button class="btn btn-success" id="setCurrentBtn" type="button">Set as Current (don't change text)</button>
+          <button class="btn btn-secondary" id="cancelEditBtn" type="button">Cancel</button>
+          <button class="btn" id="deleteLessonBtn" type="button" style="background:#FEE2E2;color:#991B1B;">Delete Lesson</button>
+        </div>
+        <div class="status-msg" id="lessonStatus"></div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE TAB -->
+    <div class="tab-panel" id="tab-schedule" style="display:none;">
+      <div class="card">
+        <h2>Which schedule is live right now?</h2>
+        <p class="hint">Both displays check this instantly — switching here changes what's on the monitors within a few seconds.</p>
+        <div id="scheduleSwitcher" class="btn-row"></div>
+        <div class="status-msg" id="activeScheduleStatus"></div>
+      </div>
+
+      <div class="card">
+        <h2>Edit a Schedule</h2>
+        <p class="hint">Editing a schedule here does <strong>not</strong> switch to it automatically — use the buttons above for that. This just lets you prep a schedule (like an upcoming assembly day) ahead of time.</p>
+        <label for="scheduleEditSelect">Schedule to edit</label>
+        <select id="scheduleEditSelect"></select>
+
+        <table class="schedule-table" id="scheduleTable" style="margin-top:14px;">
+          <thead>
+            <tr><th>Label</th><th>Course</th><th>Start</th><th>End</th><th></th></tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+        <p class="hint">Each row maps a class period to a course and a time window. Outside every window (passing periods, lunch, before/after school), both displays automatically show the "Have a Nice Day" screen. Times are 24-hour (e.g. 1:14 PM = 13:14).</p>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="addPeriodBtn" type="button">+ Add Period Row</button>
+          <button class="btn btn-primary" id="saveScheduleBtn" type="button">Save This Schedule</button>
+        </div>
+        <div class="status-msg" id="scheduleStatus"></div>
+      </div>
+
+      <div class="card">
+        <h3>Add a New Schedule</h3>
+        <p class="hint">e.g. a second Assembly Day variant, an Early Release day, etc.</p>
+        <label for="newScheduleName">Name</label>
+        <input type="text" id="newScheduleName" placeholder="e.g. Assembly Day (11/12)">
+        <label for="newScheduleCopyFrom">Start from a copy of</label>
+        <select id="newScheduleCopyFrom"></select>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="addScheduleBtn" type="button">+ Add Schedule</button>
+        </div>
+        <div class="status-msg" id="newScheduleStatus"></div>
+      </div>
+    </div>
+
+    <!-- ADD COURSE TAB -->
+    <div class="tab-panel" id="tab-course" style="display:none;">
+      <div class="card">
+        <h2>Add a Course</h2>
+        <label for="newCourseName">Course name</label>
+        <input type="text" id="newCourseName" placeholder="e.g. AP Computer Science">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="addCourseBtn" type="button">Add Course</button>
+        </div>
+        <div class="status-msg" id="courseStatus"></div>
+      </div>
+    </div>
+
+    <!-- STYLE TAB -->
+    <div class="tab-panel" id="tab-style" style="display:none;">
+      <div class="card">
+        <h2>Learning Intention Display</h2>
+        <p class="hint">Controls the font, colors, and text size on the Learning Intention monitor only.</p>
+
+        <label for="liFontInput">Font (type any Google Font name — leave blank for the default)</label>
+        <input type="text" id="liFontInput" placeholder="e.g. Poppins, Montserrat, Fredoka">
+        <p class="hint">This PC needs internet access the first time a new font is used, to download it from Google Fonts.</p>
+
+        <label for="liFontSizeInput">Max text size (px) — shrinks automatically to fit if the text is long</label>
+        <input type="number" id="liFontSizeInput" min="20" max="160">
+
+        <div class="style-row">
+          <div class="style-field color-field">
+            <label for="liBgStartInput">Background — top color</label>
+            <input type="color" id="liBgStartInput">
+          </div>
+          <div class="style-field color-field">
+            <label for="liBgEndInput">Background — bottom color</label>
+            <input type="color" id="liBgEndInput">
+          </div>
+          <div class="style-field color-field">
+            <label for="liAccentInput">Accent color</label>
+            <input type="color" id="liAccentInput">
+          </div>
+        </div>
+
+        <div class="style-preview" id="liPreview">
+          <div class="preview-label">Learning Intention</div>
+          <div id="liPreviewText">I can explain what this will look like.</div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="saveLiStyleBtn" type="button">Save Learning Intention Style</button>
+        </div>
+        <div class="status-msg" id="liStyleStatus"></div>
+      </div>
+
+      <div class="card">
+        <h2>Success Criteria Display</h2>
+        <p class="hint">Controls the font, colors, and text size on the Success Criteria monitor only.</p>
+
+        <label for="scFontInput">Font (type any Google Font name — leave blank for the default)</label>
+        <input type="text" id="scFontInput" placeholder="e.g. Poppins, Montserrat, Fredoka">
+        <p class="hint">This PC needs internet access the first time a new font is used, to download it from Google Fonts.</p>
+
+        <label for="scFontSizeInput">Max text size (px) — shrinks automatically to fit if the text is long</label>
+        <input type="number" id="scFontSizeInput" min="20" max="160">
+
+        <div class="style-row">
+          <div class="style-field color-field">
+            <label for="scBgStartInput">Background — top color</label>
+            <input type="color" id="scBgStartInput">
+          </div>
+          <div class="style-field color-field">
+            <label for="scBgEndInput">Background — bottom color</label>
+            <input type="color" id="scBgEndInput">
+          </div>
+          <div class="style-field color-field">
+            <label for="scAccentInput">Accent color</label>
+            <input type="color" id="scAccentInput">
+          </div>
+        </div>
+
+        <div class="style-preview" id="scPreview">
+          <div class="preview-label">Success Criteria</div>
+          <div id="scPreviewText">I can explain what this will look like.</div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="saveScStyleBtn" type="button">Save Success Criteria Style</button>
+        </div>
+        <div class="status-msg" id="scStyleStatus"></div>
+      </div>
+    </div>
+
+    <!-- LINKS TAB -->
+    <div class="tab-panel" id="tab-links" style="display:none;">
+      <div class="card">
+        <h2>This Computer's Address</h2>
+        <p class="hint">Use this from any other computer on the same network to reach this admin page.</p>
+        <p><code id="serverAddr">loading…</code></p>
+        <p class="hint" id="serverAlias"></p>
+      </div>
+
+      <div class="card">
+        <h2>Display Links</h2>
+        <p>Monitor 1 (auto-launched in kiosk mode) shows:</p>
+        <p><code id="liLink"></code></p>
+        <p>Monitor 2 (auto-launched in kiosk mode) shows:</p>
+        <p><code id="scLink"></code></p>
+      </div>
+
+      <div class="card">
+        <h2>Restart This PC</h2>
+        <p class="hint">Both displays will go dark for a minute or two while it restarts.</p>
+        <div class="btn-row">
+          <button class="btn" id="restartMiniPcBtn" type="button" style="background:#FEE2E2;color:#991B1B;">Restart This PC</button>
+        </div>
+        <div class="status-msg" id="restartStatus"></div>
+      </div>
+    </div>
+
+  </div>
+
+<script src="/static/admin.js"></script>
+</body>
+</html>

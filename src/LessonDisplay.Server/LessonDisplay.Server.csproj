@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <RootNamespace>LessonDisplay.Server</RootNamespace>
+    <AssemblyName>LessonDisplay.Server</AssemblyName>
+  </PropertyGroup>
+
+  <!-- No third-party NuGet packages on purpose: it keeps the build reliable
+       on a plain "install the .NET SDK and go" machine with nothing else
+       configured. The app runs as a normal long-lived process started by a
+       Windows Scheduled Task at boot (see installer/) rather than a true
+       SCM-registered Windows Service — simpler to install/uninstall (no
+       admin "sc create" juggling) and just as durable for this use case. -->
+
+  <!-- wwwroot/ and seed/ (the default lessons.json a fresh install starts
+       from) are both picked up automatically by the SDK's default content
+       globbing — no explicit ItemGroup needed. -->
+
+</Project>
