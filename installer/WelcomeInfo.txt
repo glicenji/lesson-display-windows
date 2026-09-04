@@ -1,0 +1,17 @@
+ClassSync turns two classroom monitors into an always-current
+Learning Intention / Success Criteria board:
+
+  - Monitor 1 shows what students are learning right now (the Learning
+    Intention), automatically switching with your bell schedule.
+  - Monitor 2 shows how they'll know they've learned it (the Success
+    Criteria) for that same period.
+  - Between classes, passing periods, and lunch, both monitors show a
+    friendly "Have a Nice Day" screen instead.
+
+Everything is edited from one Admin page reachable from any computer on
+your network — no need to touch the keyboard/mouse on this PC itself once
+it's set up. Changes you make (a new lesson, a schedule change, a color or
+font tweak) appear on the displays automatically within about 20 seconds.
+
+This setup will install the display software and register it to start
+automatically every time this PC turns on.

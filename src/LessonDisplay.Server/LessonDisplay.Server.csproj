@@ -5,8 +5,18 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- RootNamespace is kept as the original project name on purpose — it's
+         an internal source-code detail nobody using the app ever sees, and
+         renaming it would mean touching every file's namespace/using lines
+         for zero user-visible benefit. AssemblyName below is what actually
+         controls the shipped .exe's file name and what shows in Task
+         Manager, so that's the one that carries the product's real name. -->
     <RootNamespace>LessonDisplay.Server</RootNamespace>
-    <AssemblyName>LessonDisplay.Server</AssemblyName>
+    <AssemblyName>ClassSync.Server</AssemblyName>
+    <Product>ClassSync</Product>
+    <AssemblyTitle>ClassSync Server</AssemblyTitle>
+    <Company>ClassSync</Company>
+    <ApplicationIcon>..\..\assets\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!-- No third-party NuGet packages on purpose: it keeps the build reliable
@@ -19,5 +29,9 @@
   <!-- wwwroot/ and seed/ (the default lessons.json a fresh install starts
        from) are both picked up automatically by the SDK's default content
        globbing — no explicit ItemGroup needed. -->
+
+  <ItemGroup>
+    <Compile Include="..\..\shared\Licensing\*.cs" />
+  </ItemGroup>
 
 </Project>

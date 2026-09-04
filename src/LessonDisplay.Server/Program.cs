@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using LessonDisplay.Server;
+using LessonDisplay.Server.Licensing;
 using LessonDisplay.Server.Mdns;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,19 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------------------------------------------------------------------
 // Configuration — sane defaults so the app "just works" once installed,
 // everything overridable via environment variables for advanced setups.
-//   LESSONDISPLAY_PORT      default 8420
-//   LESSONDISPLAY_DATA_DIR  default %ProgramData%\LessonDisplay\data
-//   LESSONDISPLAY_HOSTNAME  default "lessons" -> advertises lessons.local
+//   CLASSSYNC_PORT      default 8420
+//   CLASSSYNC_DATA_DIR  default %ProgramData%\ClassSync\data
+//   CLASSSYNC_HOSTNAME  default "lessons" -> advertises lessons.local
 // ---------------------------------------------------------------------
-var port = int.TryParse(Environment.GetEnvironmentVariable("LESSONDISPLAY_PORT"), out var p) ? p : 8420;
+var port = int.TryParse(Environment.GetEnvironmentVariable("CLASSSYNC_PORT"), out var p) ? p : 8420;
 
 var defaultDataDir = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-    "LessonDisplay", "data");
-var dataDir = Environment.GetEnvironmentVariable("LESSONDISPLAY_DATA_DIR") is { Length: > 0 } dd ? dd : defaultDataDir;
+    "ClassSync", "data");
+var dataDir = Environment.GetEnvironmentVariable("CLASSSYNC_DATA_DIR") is { Length: > 0 } dd ? dd : defaultDataDir;
 var dataPath = Path.Combine(dataDir, "lessons.json");
 
-var hostnameAlias = Environment.GetEnvironmentVariable("LESSONDISPLAY_HOSTNAME") is { Length: > 0 } h ? h : "lessons";
+var hostnameAlias = Environment.GetEnvironmentVariable("CLASSSYNC_HOSTNAME") is { Length: > 0 } h ? h : "lessons";
 
 builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(port));
 
@@ -30,10 +31,52 @@ var app = builder.Build();
 var seedPath = Path.Combine(app.Environment.ContentRootPath, "seed", "lessons.json");
 var store = new DataStore(dataPath, File.Exists(seedPath) ? seedPath : null);
 
+var licenseDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+    "ClassSync");
+var license = new LicenseState(licenseDir, EmbeddedPublicKey.Pem);
+
 var webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(webRoot),
+});
+
+// ---------------------------------------------------------------------
+// License gate — runs before everything else. During an active trial or
+// with a valid key, this is invisible. Once the trial has run out, page
+// requests get the "enter your license key" screen instead of the normal
+// app, and write endpoints are refused; /api/license/* and static assets
+// always pass through so the activation screen itself keeps working.
+// ---------------------------------------------------------------------
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/api/license/") || path.StartsWith("/static/"))
+    {
+        await next();
+        return;
+    }
+
+    var status = license.GetStatus();
+    if (!status.Usable)
+    {
+        if (context.Request.Method == "GET" &&
+            (path == "/" || path == "/admin" || path.StartsWith("/display/")))
+        {
+            context.Response.ContentType = "text/html";
+            await context.Response.WriteAsync(LicenseGatePage.Render());
+            return;
+        }
+        if (context.Request.Method == "POST" && path.StartsWith("/api/"))
+        {
+            context.Response.StatusCode = 402;
+            await context.Response.WriteAsJsonAsync(new { error = "Your trial has ended. Enter a license key to continue.", trial_expired = true });
+            return;
+        }
+    }
+
+    await next();
 });
 
 // Best-effort friendly-hostname advertising on the LAN (see Mdns/MdnsAnnouncer.cs).
@@ -43,7 +86,7 @@ var mdns = new MdnsAnnouncer(new[] { $"{hostnameAlias}.local" }, app.Logger);
 mdns.Start();
 app.Lifetime.ApplicationStopping.Register(() => mdns.Dispose());
 
-app.Logger.LogInformation("Lesson Display Server starting on port {Port}, data at {DataPath}", port, dataPath);
+app.Logger.LogInformation("ClassSync Server starting on port {Port}, data at {DataPath}", port, dataPath);
 
 // -----------------------------------------------------------------
 // helpers
@@ -115,6 +158,35 @@ app.MapGet("/api/server-info", () =>
         li_url = $"http://{ip}:{port}/display/learning-intention",
         sc_url = $"http://{ip}:{port}/display/success-criteria",
     });
+});
+
+// -----------------------------------------------------------------
+// Licensing
+// -----------------------------------------------------------------
+app.MapGet("/api/license/status", () =>
+{
+    var status = license.GetStatus();
+    return Results.Json(new
+    {
+        state = status.State,
+        usable = status.Usable,
+        days_remaining = status.State == "trial" ? status.DaysRemaining : (int?)null,
+        licensee = status.Payload?.Licensee,
+        plan_type = status.Payload?.PlanType,
+    });
+});
+
+app.MapPost("/api/license/activate", async (HttpRequest req) =>
+{
+    var body = await ReadBodyAsync(req);
+    var key = AsString(body["key"]);
+    if (string.IsNullOrWhiteSpace(key)) return BadRequest("key required");
+
+    var (ok, error) = license.Activate(key);
+    if (!ok) return Results.Json(new { error = error ?? "Invalid license key." }, statusCode: 400);
+
+    var status = license.GetStatus();
+    return Results.Json(new { ok = true, state = status.State, licensee = status.Payload?.Licensee });
 });
 
 // -----------------------------------------------------------------
@@ -422,7 +494,7 @@ app.MapPost("/api/restart/trigger", async () =>
         Process.Start(new ProcessStartInfo
         {
             FileName = "shutdown",
-            Arguments = "/r /t 5 /c \"Restarting to apply Lesson Display changes\"",
+            Arguments = "/r /t 5 /c \"Restarting to apply ClassSync changes\"",
             UseShellExecute = false,
             CreateNoWindow = true,
         });

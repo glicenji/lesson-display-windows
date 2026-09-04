@@ -1,9 +1,9 @@
-# Lesson Display for Windows
+# ClassSync for Windows
 
-A from-scratch C#/.NET rewrite of the Lesson Display project (originally
-Python/Flask running in Docker on a NAS), packaged as a normal Windows
-installer so any teacher can put it on a mini PC with two monitors, with
-zero command line work.
+A from-scratch C#/.NET rewrite of the original "Lesson Display" project
+(Python/Flask running in Docker on a NAS), now named **ClassSync** and
+packaged as a normal Windows installer so any teacher can put it on a mini
+PC with two monitors, with zero command line work.
 
 ## How it's different from the original NAS version
 
@@ -26,14 +26,22 @@ install and simpler to explain to a non-technical teacher, and it means:
 
 ## Two apps, one installer
 
-- **LessonDisplay.Server** — the web server (courses, lessons, bell
-  schedule, display styling, JSON API). Installed to run as a background
-  process that starts at boot, before anyone logs in.
-- **LessonDisplay.Kiosk** — on logon, waits for the server to come up, then
-  opens Microsoft Edge in fullscreen kiosk mode on each monitor (Learning
-  Intention on the first, Success Criteria on the second), and leaves a
-  small system tray icon behind with "Open Admin Page", "Copy Admin Link",
-  "Restart Kiosk Displays", and "Exit Kiosk".
+- **ClassSync.Server.exe** (source: `src/LessonDisplay.Server/`) — the web
+  server (courses, lessons, bell schedule, display styling, JSON API).
+  Installed to run as a background process that starts at boot, before
+  anyone logs in.
+- **ClassSync.Kiosk.exe** (source: `src/LessonDisplay.Kiosk/`) — on logon,
+  waits for the server to come up, then opens Microsoft Edge in fullscreen
+  kiosk mode on each monitor (Learning Intention on the first, Success
+  Criteria on the second), and leaves a small system tray icon behind with
+  "Open Admin Page", "Copy Admin Link", "Restart Kiosk Displays", and "Exit
+  Kiosk".
+
+(The source folders and internal C# namespaces still say `LessonDisplay` —
+that's the original project name, kept for the source tree only since
+renaming it touches every file for zero user-visible benefit. Anything a
+teacher or buyer actually sees — the installer, the shipped .exe names,
+window/page titles, Start Menu entries — says ClassSync.)
 
 Both are plain .NET apps with **no third-party NuGet packages** — the
 server uses only ASP.NET Core and the JSON types built into .NET; the kiosk
@@ -43,27 +51,27 @@ reliable on a machine that has nothing but the .NET SDK installed.
 ## Getting the installer
 
 You don't need Visual Studio or even a Windows PC to produce
-`LessonDisplaySetup.exe` — GitHub will build it for you for free:
+`ClassSyncSetup.exe` — GitHub will build it for you for free:
 
 1. Create a new GitHub repository and push this folder to it.
 2. Open the repo's **Actions** tab. The "Build Windows Installer" workflow
    runs automatically on push (or click "Run workflow" to trigger it by
    hand).
 3. When it finishes (a few minutes), open the run and download the
-   **LessonDisplaySetup** artifact — that's `LessonDisplaySetup.exe`, ready
-   to hand to any teacher.
+   **ClassSyncSetup** artifact — that's `ClassSyncSetup.exe`, ready to hand
+   to any teacher.
 
 If you'd rather build locally on a Windows PC that already has the [.NET
 SDK](https://dotnet.microsoft.com/download) and [Inno
 Setup](https://jrsoftware.org/isdl.php) installed, open PowerShell in this
 folder and run `.\build.ps1` — it does the same two steps (publish, then
 compile the installer) and leaves the result at
-`installer\Output\LessonDisplaySetup.exe`.
+`installer\Output\ClassSyncSetup.exe`.
 
 ## Installing it (what a teacher does)
 
-1. Run `LessonDisplaySetup.exe` on the classroom mini PC (needs
-   administrator rights, once, for the install).
+1. Run `ClassSyncSetup.exe` on the classroom mini PC (needs administrator
+   rights, once, for the install).
 2. It registers the server to start at boot and the kiosk launcher to start
    at logon, opens the firewall for port 8420, and offers to open the Admin
    page immediately.
@@ -74,7 +82,7 @@ compile the installer) and leaves the result at
 
 Uninstalling removes the app and the scheduled tasks/firewall rule, but
 **deliberately leaves lesson content in place**
-(`%ProgramData%\LessonDisplay\data\lessons.json`) so a reinstall or upgrade
+(`%ProgramData%\ClassSync\data\lessons.json`) so a reinstall or upgrade
 never loses anyone's lessons.
 
 ## Configuration
@@ -83,22 +91,99 @@ Everything has a sensible default; these environment variables (set them
 system-wide via System Properties → Environment Variables, then restart the
 scheduled tasks) override them:
 
-| Variable                   | Default                                    | Meaning                          |
-|-----------------------------|---------------------------------------------|-----------------------------------|
-| `LESSONDISPLAY_PORT`       | `8420`                                      | Port the web server listens on   |
-| `LESSONDISPLAY_DATA_DIR`   | `%ProgramData%\LessonDisplay\data`          | Where `lessons.json` lives       |
-| `LESSONDISPLAY_HOSTNAME`   | `lessons`                                   | Advertises `<value>.local`       |
+| Variable              | Default                          | Meaning                          |
+|------------------------|-----------------------------------|-----------------------------------|
+| `CLASSSYNC_PORT`       | `8420`                            | Port the web server listens on   |
+| `CLASSSYNC_DATA_DIR`   | `%ProgramData%\ClassSync\data`    | Where `lessons.json` lives       |
+| `CLASSSYNC_HOSTNAME`   | `lessons`                         | Advertises `<value>.local`       |
+
+## Licensing (7-day trial + paid keys)
+
+Every fresh install runs as a **free 7-day trial** automatically — nothing
+to enter, the clock starts the first time the server runs. Once those 7
+days are up, the Admin page and both display monitors switch to a
+"Trial Expired" screen that asks for a license key; entering a valid one
+unlocks everything again instantly, no restart, no reinstall. A teacher
+who already bought a key can skip the trial entirely by activating it from
+day one (Admin → Display Links tab → License card).
+
+This works **fully offline** — there's no license server to run, pay for,
+or keep online, and no third-party service (Gumroad, etc.) taking a cut or
+able to shut off access. It's a self-signed scheme: a private key (which
+only you hold) signs each license key, and the app only trusts keys signed
+by the matching public key baked into it. Nobody can forge a working key
+without your private key, but you also never have to be online to check
+one.
+
+### Selling a key — the short version
+
+1. **Generate your real signing keypair once**, on your own machine, using
+   the `LicenseTool` you can download from the same GitHub Actions run
+   that builds the installer (Actions → the run → **LicenseTool** artifact
+   → `LicenseTool.exe`). Or build it yourself with the .NET SDK from
+   `tools/LicenseTool`.
+
+   ```
+   LicenseTool.exe genkey --out-dir C:\Keys\ClassSync
+   ```
+
+   This writes `private.key` and `public.key` there and prints the public
+   key's contents to the screen.
+
+2. **Put your real public key in the app**, replacing the demo one, so
+   copies you build after this point actually check against your key:
+   open `src/LessonDisplay.Server/Licensing/EmbeddedPublicKey.cs` and
+   paste your `public.key` contents in place of the placeholder PEM
+   string, following the instructions in that file's comment. Commit that
+   one-line change and push — the next installer build picks it up.
+
+3. **Never commit or share `private.key`.** Back it up somewhere safe
+   (password manager, encrypted drive) — it's the only thing that can mint
+   valid keys for your app, and if you lose it you'd have to switch
+   everyone to a new public key (old keys they already have keep working,
+   but you couldn't issue new ones under the old identity). `.gitignore`
+   already blocks a `private.key`/`public.key` pair from being committed
+   by accident if you generate them inside this folder.
+
+4. **Issue one key per sale:**
+
+   ```
+   LicenseTool.exe issue --private C:\Keys\ClassSync\private.key --name "Jane Smith" --email jane@school.edu
+   ```
+
+   That prints a `CSN1....` string — send that to the buyer, they paste it
+   into Admin → Display Links → License → Activate. Add `--type
+   subscription --years 1` instead of the default (perpetual, never
+   expires) if you'd rather sell renewing access.
+
+   You can sanity-check any key before sending it:
+   ```
+   LicenseTool.exe verify --public C:\Keys\ClassSync\public.key --key CSN1.xxxx.yyyy
+   ```
+
+### Important: replace the demo key before selling anything
+
+`demo-keys/private.key` and `demo-keys/public.key` in this repo are
+throwaway keys generated so the app has *something* to test licensing
+against out of the box. Because `demo-keys/private.key` sits in a public
+GitHub repo, **anyone can mint a "valid" license for any copy still using
+the demo public key** — that's fine for testing, but means you must
+complete steps 1–2 above (generate your own real keypair and swap
+`EmbeddedPublicKey.cs`) before you distribute a copy you intend to charge
+for. `tools/LicenseTool` itself is deliberately not installed by
+`ClassSyncSetup.exe` — it's a seller-only tool, kept out of what teachers
+receive.
 
 ## What's been tested vs. not
 
 This code was written and packaged in a Linux sandbox with no access to a
 real Windows machine, so here's the honest state of it:
 
-- **LessonDisplay.Server** — fully built and exercised here: every API
+- **ClassSync.Server** — fully built and exercised here: every API
   endpoint (lessons, courses, schedules, display styles, validation
   failures) was run against a live instance and checked against the
   original Python app's behavior line-by-line. This part is solid.
-- **LessonDisplay.Kiosk** (the WinForms tray/kiosk launcher) — written
+- **ClassSync.Kiosk** (the WinForms tray/kiosk launcher) — written
   carefully but **could not be compiled or run in this environment**
   (WinForms needs the Windows Desktop runtime, which only exists on
   Windows). Its first real build and test will be the GitHub Actions run or
@@ -107,7 +192,33 @@ real Windows machine, so here's the honest state of it:
   `LaunchKioskWindow` (the `--window-position`/`--window-size` arguments).
 - **The installer script** (Inno Setup) — written following Inno Setup's
   documented syntax but not run through the actual compiler, since that
-  also only runs on Windows.
+  also only runs on Windows. This includes the wizard illustration/info
+  page settings (`WizardImageFile`, `WizardSmallImageFile`,
+  `InfoBeforeFile`) — Inno Setup requires plain `.bmp` files at exact pixel
+  sizes (see `installer/images/README.md`); the next GitHub Actions run is
+  the first real check that they display correctly.
+- **The "About ClassSync" slideshow page** (the `[Code]` section at
+  the bottom of `LessonDisplaySetup.iss`) — this is the single riskiest
+  piece in the whole project, and worth calling out specifically: it's a
+  custom wizard page that crossfades between the three classroom photos
+  using a real Win32 timer (`SetTimer`/`CreateCallback`), since Inno
+  Setup's built-in `WizardImageFile` only supports one static image, not
+  an animated sequence. Every piece of it (the timer callback pattern, the
+  `TBitmapImage`/`TNewStaticText` classes, the `dontcopy` + wildcard +
+  `ExtractTemporaryFile` technique for bundling the 36 crossfade frames)
+  is copied from or closely follows Inno Setup's own official
+  documentation and example scripts — but Pascal Script genuinely cannot
+  be compiled or run outside Windows, so this has not been visually
+  confirmed. If it doesn't behave right, look here first. The photos
+  themselves and the app icon can be swapped any time by re-running
+  `installer/images/generate_assets.py` — see that folder's README.
+- **Licensing** (`LicenseTool`, the trial clock, the Admin activation
+  screen) — fully built and exercised here end to end: generating a
+  keypair, issuing a key, activating it in a running instance, rejecting a
+  tampered key, and a back-dated trial correctly locking out both page
+  views and write API calls until a valid key is entered. This part is
+  solid; only `LicenseTool`'s packaging as a Windows `.exe` (via the CI
+  step above) hasn't been confirmed on a real Windows machine yet.
 
 Worth a real-world test pass on actual hardware before handing this to
 other teachers, particularly: two-monitor kiosk positioning, the Scheduled

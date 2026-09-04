@@ -1,4 +1,10 @@
-﻿name: Build Windows Installer
+name: Build Windows Installer
+
+# Builds ClassSync.Server and ClassSync.Kiosk as self-contained
+# win-x64 executables (so nobody installing them needs .NET separately),
+# then packages both into one Windows installer with Inno Setup. Nothing
+# needs to be installed by hand to use this — push to GitHub and download
+# the finished installer from this run's "Artifacts" section.
 
 on:
   push:
@@ -30,6 +36,13 @@ jobs:
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish/Kiosk
 
+      - name: Publish LicenseTool (for you, the seller — not part of the installer)
+        run: >
+          dotnet publish tools/LicenseTool/LicenseTool.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish/LicenseTool
+
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
 
@@ -41,5 +54,11 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: LessonDisplaySetup
-          path: installer/Output/LessonDisplaySetup.exe
+          name: ClassSyncSetup
+          path: installer/Output/ClassSyncSetup.exe
+
+      - name: Upload LicenseTool
+        uses: actions/upload-artifact@v4
+        with:
+          name: LicenseTool
+          path: publish/LicenseTool/LicenseTool.exe

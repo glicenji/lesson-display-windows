@@ -6,7 +6,7 @@
       "lessons": [
         {
           "lesson_number": 1,
-          "topic": "Welcome to Lesson Display",
+          "topic": "Welcome to ClassSync",
           "learning_intention": "I can find the Admin page and edit this lesson.",
           "success_criteria": [
             "I can open the Admin page from another computer on this network.",

@@ -33,6 +33,7 @@
     var origin = window.location.origin;
     document.getElementById("liLink").textContent = origin + "/display/learning-intention";
     document.getElementById("scLink").textContent = origin + "/display/success-criteria";
+    refreshLicenseBanner();
 
     fetch("/api/server-info", { cache: "no-store" })
       .then(function (r) { return r.json(); })
@@ -66,6 +67,62 @@
         });
     });
   }
+
+  // ---------------- licensing ----------------
+  function refreshLicenseBanner() {
+    fetch("/api/license/status", { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (status) {
+        var banner = document.getElementById("trialBanner");
+        if (status.state === "trial") {
+          banner.style.display = "block";
+          banner.textContent = "Trial — " + status.days_remaining + " day" + (status.days_remaining === 1 ? "" : "s") +
+            " left. Enter a license key on the Display Links tab to keep using ClassSync after that.";
+        } else {
+          banner.style.display = "none";
+        }
+        var info = document.getElementById("licenseInfo");
+        if (info) {
+          if (status.state === "licensed") {
+            info.textContent = "Licensed" + (status.licensee ? " to " + status.licensee : "") +
+              (status.plan_type === "subscription" ? " (subscription)" : " (perpetual).");
+          } else if (status.state === "trial") {
+            info.textContent = "Trial — " + status.days_remaining + " day" + (status.days_remaining === 1 ? "" : "s") + " remaining.";
+          } else {
+            info.textContent = "Trial has ended. Enter your license key below.";
+          }
+        }
+      })
+      .catch(function () { /* non-critical, ignore */ });
+  }
+
+  var activateLicenseBtn = document.getElementById("activateLicenseBtn");
+  if (activateLicenseBtn) {
+    activateLicenseBtn.addEventListener("click", function () {
+      var licenseStatus = document.getElementById("licenseStatus");
+      var key = document.getElementById("licenseKeyInput").value.trim();
+      if (!key) return;
+      activateLicenseBtn.disabled = true;
+      fetch("/api/license/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: key }),
+      })
+        .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+        .then(function (result) {
+          if (result.ok) {
+            showStatus(licenseStatus, "License activated.", true);
+            refreshLicenseBanner();
+          } else {
+            showStatus(licenseStatus, result.body.error || "Could not activate this key.", false);
+          }
+        })
+        .catch(function () { showStatus(licenseStatus, "Could not reach the server.", false); })
+        .finally(function () { activateLicenseBtn.disabled = false; });
+    });
+  }
+
+  refreshLicenseBanner();
 
   // ---------------- data loading ----------------
   function loadData(afterLoad) {

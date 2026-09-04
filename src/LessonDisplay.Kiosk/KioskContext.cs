@@ -7,7 +7,7 @@ namespace LessonDisplay.Kiosk;
 
 /// <summary>
 /// Runs with no visible main form. On startup it waits for the local
-/// LessonDisplay.Server to come up, then opens one fullscreen Edge "kiosk
+/// ClassSync server to come up, then opens one fullscreen Edge "kiosk
 /// mode" window per monitor pointed at the Learning Intention / Success
 /// Criteria pages, and leaves a small tray icon behind for control.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class KioskContext : ApplicationContext
 
     public KioskContext()
     {
-        _port = int.TryParse(Environment.GetEnvironmentVariable("LESSONDISPLAY_PORT"), out var envPort) ? envPort : 8420;
+        _port = int.TryParse(Environment.GetEnvironmentVariable("CLASSSYNC_PORT"), out var envPort) ? envPort : 8420;
 
         var menu = new ContextMenuStrip();
         menu.Items.Add("Open Admin Page", null, (_, _) => OpenAdmin());
@@ -30,8 +30,8 @@ public sealed class KioskContext : ApplicationContext
 
         _tray = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
-            Text = "Lesson Display",
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application,
+            Text = "ClassSync",
             Visible = true,
             ContextMenuStrip = menu,
         };
@@ -82,15 +82,15 @@ public sealed class KioskContext : ApplicationContext
         if (edge is null)
         {
             MessageBox.Show(
-                "Microsoft Edge could not be found on this PC. Lesson Display uses Edge " +
+                "Microsoft Edge could not be found on this PC. ClassSync uses Edge " +
                 "(included with Windows 10/11) to show the kiosk screens.",
-                "Lesson Display", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "ClassSync", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
         var profileDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "LessonDisplay", "browser-profiles", tag);
+            "ClassSync", "browser-profiles", tag);
         Directory.CreateDirectory(profileDir);
 
         var b = screen.Bounds;
@@ -119,7 +119,7 @@ public sealed class KioskContext : ApplicationContext
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Could not start the {tag} display: {ex.Message}", "Lesson Display",
+            MessageBox.Show($"Could not start the {tag} display: {ex.Message}", "ClassSync",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
@@ -164,7 +164,7 @@ public sealed class KioskContext : ApplicationContext
 
     private void ShowBalloon(string text)
     {
-        _tray.BalloonTipTitle = "Lesson Display";
+        _tray.BalloonTipTitle = "ClassSync";
         _tray.BalloonTipText = text;
         _tray.ShowBalloonTip(6000);
     }

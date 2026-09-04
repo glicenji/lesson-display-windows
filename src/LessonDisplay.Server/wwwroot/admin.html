@@ -2,15 +2,17 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Lesson Display — Admin</title>
+<title>ClassSync — Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="admin">
   <div class="admin-header">
-    <h1>Lesson Display — Admin</h1>
+    <h1>ClassSync — Admin</h1>
     <p>Edit Learning Intentions, Success Criteria, and the bell schedule. Changes save immediately and the classroom displays pick them up within ~20 seconds — no restart needed.</p>
   </div>
+
+  <div id="trialBanner" style="display:none; background:#FEF3C7; color:#92400E; padding:10px 24px; font-size:13px; font-weight:600; text-align:center;"></div>
 
   <div class="admin-wrap">
 
@@ -197,6 +199,17 @@
 
     <!-- LINKS TAB -->
     <div class="tab-panel" id="tab-links" style="display:none;">
+      <div class="card">
+        <h2>License</h2>
+        <p class="hint" id="licenseInfo">Checking license status…</p>
+        <label for="licenseKeyInput">License key</label>
+        <input type="text" id="licenseKeyInput" placeholder="CSN1....">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="activateLicenseBtn" type="button">Activate</button>
+        </div>
+        <div class="status-msg" id="licenseStatus"></div>
+      </div>
+
       <div class="card">
         <h2>This Computer's Address</h2>
         <p class="hint">Use this from any other computer on the same network to reach this admin page.</p>

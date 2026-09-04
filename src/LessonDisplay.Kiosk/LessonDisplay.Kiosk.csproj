@@ -6,7 +6,14 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon />
+    <!-- AssemblyName controls the shipped .exe's file name / Task Manager
+         name; RootNamespace (left at its default, same as the project name)
+         is an internal source-code detail with no user-visible effect. -->
+    <AssemblyName>ClassSync.Kiosk</AssemblyName>
+    <Product>ClassSync</Product>
+    <AssemblyTitle>ClassSync Kiosk</AssemblyTitle>
+    <Company>ClassSync</Company>
+    <ApplicationIcon>..\..\assets\icon.ico</ApplicationIcon>
     <!-- Lets `dotnet build` at least type-check this project on a non-Windows
          machine (used to validate the source in this repo's dev environment).
          Has no effect on a real Windows build/publish. -->

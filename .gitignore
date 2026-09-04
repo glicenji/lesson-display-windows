@@ -1,0 +1,14 @@
+bin/
+obj/
+publish/
+installer/Output/
+*.user
+
+# Safety net: if you ever run `LicenseTool genkey` without --out-dir while
+# sitting inside this repo, this stops the real private key from being
+# committed by accident. The demo-keys/ folder below is an intentional
+# exception — those are throwaway keys meant to be public.
+private.key
+public.key
+!demo-keys/private.key
+!demo-keys/public.key
